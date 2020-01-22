@@ -10,7 +10,7 @@ wins = []
 accuracies = []
 last_match = {}
 
-P = 0.85
+P = 0
 
 
 def accuracy() -> None:
@@ -48,6 +48,29 @@ def analyse(matches: pd.DataFrame) -> None:
     accuracy()
 
 
+def analyse_matches() -> None:
+    hist = pd.read_excel("results.xlsx")
+    win = 0
+    loss = 0
+    for i, match in hist.iterrows():
+        try:
+            actual = int(match["Actual"])
+        except ValueError:
+            actual = 0
+        try:
+            me = int(match["Me"])
+        except ValueError:
+            me = 0
+        print([actual, me, actual > 0, me > 0, actual > 0 and me > 0, actual == me])
+        if actual > 0 and me > 0:
+            if actual == me:
+                win += 1
+            else:
+                loss += 1
+
+    print([win, loss, win/(win+loss)])
+
+
 def best(matches: pd.DataFrame) -> None:
     sorted_ranks = sorted(elo.items(), key=lambda x: x[1])
     print("Top scorers:")
@@ -59,15 +82,21 @@ def get_player(matches: pd.DataFrame, player_id: int) -> str:
     try:
         player = matches.loc[matches['winner_id'] == player_id]['winner_name'].unique()[0]
     except IndexError:
-        player = matches.loc[matches['loser_id'] == player_id]['loser_name'].unique()[0]
+        try:
+            player = matches.loc[matches['loser_id'] == player_id]['loser_name'].unique()[0]
+        except IndexError:
+            print(["Player not found", player_id])
     return player
 
 
 def load() -> pd.DataFrame:
     data = pd.DataFrame()
-    for year in range(1968, 2020):
+    for year in range(1968, 2021):
         try:
-            data = data.append(pd.read_csv(f"tennis_atp/atp_matches_{year}.csv"), sort=False)
+            if year == 2020:
+                data = data.append(pd.read_csv(f"tennis_atp/atp_matches_{year}.csv").rename(columns={"loser_id":"fake_loser_id","winner_rank":"loser_id"}), sort=False)
+            else:
+                data = data.append(pd.read_csv(f"tennis_atp/atp_matches_{year}.csv"), sort=False)
             print(f"Loading data from {year}...")
         except FileNotFoundError:
             print(f"No data found for {year}.")
@@ -80,6 +109,7 @@ def main() -> None:
     verse(matches)
     # search(matches)
     # predict_players(matches)
+    # analyse_matches()
 
 
 def predict(player1: int, player2: int) -> float:
@@ -126,7 +156,7 @@ def search_players(prompt: str, player_list: dict) -> [str, str]:
                       if player_list[x].lower().find(query.lower()) > -1]
     if len(search_results) > 0:
         for player in search_results[:5]:
-            print(f"{player[0]}:{player[1]} ({player[2]})")
+            print(f"{player[0]}:{player[1]} ({player[2]}): {elo[player[0]]}")
         player = [search_results[0][0], search_results[0][1]]
     else:
         print("No player found.")
@@ -145,10 +175,12 @@ def update(player: int, expected: float, actual: int) -> None:
 
 def verse(matches: pd.DataFrame) -> None:
     player_list = {x: get_player(matches, x) for x in elo}
-    player_list = {k: v for k, v in sorted(player_list.items(), key=lambda x: last_match[x[0]], reverse=True)}
-    player1 = search_players("Player 1: ", player_list)
-    player2 = search_players("Player 2: ", player_list)
-    print(f"{player1[1]} vs {player2[1]}: {predict(player1[0], player2[0])}")
+    player_list = {k: str(v) for k, v in sorted(player_list.items(), key=lambda x: last_match[x[0]], reverse=True)}
+    while True:
+        player1 = search_players("Player 1: ", player_list)
+        player2 = search_players("Player 2: ", player_list)
+        p = predict(player1[0], player2[0])
+        print(f"{player1[1]} vs {player2[1]}: {p} (1:{1/p})")
 
 
 if __name__ == '__main__':
