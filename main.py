@@ -42,7 +42,7 @@ def analyse(matches: pd.DataFrame) -> None:
             wins.append(1 if p > 0.5 else 0)
         accuracies.append(p)
     print(f"Math took {time.time() - s}s")
-    # best(matches)
+    best(matches)
     # accuracy()
 
     global player_list
@@ -80,7 +80,7 @@ def best(matches: pd.DataFrame) -> None:
         print(f"{get_player(matches, player[0])}: {player[1]}")
 
 
-def do_aus_open(matches: pd.DataFrame, aus_open: pd.DataFrame) -> None:
+def do_aus_open(aus_open: pd.DataFrame) -> None:
     open_player_list = {}
     for i, game in aus_open.iterrows():
         # print(game)
@@ -134,7 +134,7 @@ def load() -> pd.DataFrame:
 
 
 def load_aus_open() -> pd.DataFrame:
-    aus_open = pd.read_excel("results_test.xlsx", nrows=127)
+    aus_open = pd.read_excel("results.xlsx", nrows=127)
     return aus_open
 
 
@@ -145,7 +145,7 @@ def main() -> None:
     #
     # predict_players(matches)
     aus_open2020 = load_aus_open()
-    do_aus_open(matches, aus_open2020)
+    do_aus_open(aus_open2020)
     # search(matches)
     # analyse_matches()
 
