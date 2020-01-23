@@ -37,18 +37,13 @@ def analyse(matches: pd.DataFrame) -> None:
         last_match[loser_id] = match['tourney_date']
         if winner_id == 199999 or loser_id == 199999:
             continue
-        p1 = predict(winner_id, loser_id)
-        p2 = predict(loser_id, winner_id)
-        games[winner_id] += 1
-        games[loser_id] += 1
-        update(winner_id, p1, 1)
-        update(loser_id, p2, 0)
-        if abs(p1 - 0.5) + 0.5 > P:
-            wins.append(1 if p1 > 0.5 else 0)
-        accuracies.append(p1)
+        p = do_match(winner_id, loser_id, 1)[0]
+        if abs(p - 0.5) + 0.5 > P:
+            wins.append(1 if p > 0.5 else 0)
+        accuracies.append(p)
     print(f"Math took {time.time() - s}s")
-    best(matches)
-    accuracy()
+    # best(matches)
+    # accuracy()
 
     global player_list
     player_list = {x: get_player(matches, x) for x in elo}
@@ -99,10 +94,14 @@ def do_aus_open(matches: pd.DataFrame, aus_open: pd.DataFrame) -> None:
         p1 = open_player_list[game[1]]
         p2 = open_player_list[game[2]]
 
-        print(game["Me"])
+        if game["Actual"] in [1, 2]:
+            do_match(p1, p2, game["Actual"])
 
-        print([game[1], p1, game[2], p2, predict(p1, p2)])
-    pass
+        if game["Me"] not in [1, 2] and game["Actual"] not in [1, 2]:
+            p = predict(p1, p2)
+            m = 1 if p > 0.5 else 2 if p < 0.5 else 0.5
+            w = game[1] if m == 1 else game[2] if m == 2 else ""
+            print(f"I predict for the game {game[1]} vs {game[2]} that {w} will win. {p}")
 
 
 def get_player(matches: pd.DataFrame, player_id: int) -> str:
@@ -118,24 +117,24 @@ def get_player(matches: pd.DataFrame, player_id: int) -> str:
 
 
 def load() -> pd.DataFrame:
-    data = pd.DataFrame()
-    for year in range(1968, 2021):
-        try:
-            if year == 2020:
-                data = data.append(pd.read_csv(f"tennis_atp/atp_matches_{year}.csv")
-                                   .rename(columns={"loser_id": "fake_loser_id", "winner_rank": "loser_id"}), sort=False)
-            else:
-                data = data.append(pd.read_csv(f"tennis_atp/atp_matches_{year}.csv"), sort=False)
-            print(f"Loading data from {year}...")
-        except FileNotFoundError:
-            print(f"No data found for {year}.")
+    data = pd.read_csv("all_matches.csv", low_memory=False)
+    # for year in range(1968, 2021):
+    #     try:
+    #         if year == 2020:
+    #             data = data.append(pd.read_csv(f"tennis_atp/atp_matches_{year}.csv")
+    #                                .rename(columns={"loser_id": "fake_loser_id", "winner_rank": "loser_id"}), sort=False)
+    #         else:
+    #             data = data.append(pd.read_csv(f"tennis_atp/atp_matches_{year}.csv"), sort=False)
+    #         print(f"Loading data from {year}...")
+    #     except FileNotFoundError:
+    #         print(f"No data found for {year}.")
     # data.to_csv("all_matches.csv")
 
     return data
 
 
 def load_aus_open() -> pd.DataFrame:
-    aus_open = pd.read_excel("results.xlsx", nrows=127)
+    aus_open = pd.read_excel("results_test.xlsx", nrows=127)
     return aus_open
 
 
@@ -147,8 +146,20 @@ def main() -> None:
     # predict_players(matches)
     aus_open2020 = load_aus_open()
     do_aus_open(matches, aus_open2020)
-    search(matches)
+    # search(matches)
     # analyse_matches()
+
+
+def do_match(p1: int, p2: int, winner: int) -> list:
+    c1 = predict(p1, p2)
+    c2 = predict(p2, p1)
+    if p1 != 0:
+        games[p1] += 1
+        update(p1, c1, 1 if winner == 1 else 0)
+    if p2 != 0:
+        games[p2] += 1
+        update(p2, c2, 1 if winner == 2 else 0)
+    return [c1, c2]
 
 
 def predict(player1: int, player2: int) -> float:
