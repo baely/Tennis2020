@@ -118,13 +118,13 @@ def get_player(matches: pd.DataFrame, player_id: int) -> str:
 
 def load() -> pd.DataFrame:
     data = pd.read_csv("all_matches.csv", low_memory=False)
-    # for year in range(1968, 2021):
+    # data = pd.DataFrame()
+    # for year in range(1968, 2022):
     #     try:
-    #         if year == 2020:
-    #             data = data.append(pd.read_csv(f"tennis_atp/atp_matches_{year}.csv")
-    #                                .rename(columns={"loser_id": "fake_loser_id", "winner_rank": "loser_id"}), sort=False)
+    #         if year == 2021:
+    #             data = data.append(pd.read_csv(f"../tennis_atp/atp_matches_{year}.csv"), sort=False)
     #         else:
-    #             data = data.append(pd.read_csv(f"tennis_atp/atp_matches_{year}.csv"), sort=False)
+    #             data = data.append(pd.read_csv(f"../tennis_atp/atp_matches_{year}.csv"), sort=False)
     #         print(f"Loading data from {year}...")
     #     except FileNotFoundError:
     #         print(f"No data found for {year}.")

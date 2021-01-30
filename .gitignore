@@ -1,9 +1,5 @@
 
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/Tennis.iml
-.idea/vcs.xml
+.idea/
 accuracies.csv
 accuracies.txt
 accuracies.xlsx
